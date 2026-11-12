@@ -42,20 +42,15 @@ def webhook():
 def handle_message(event):
     text = event.message.text.strip().lower()
 
-    if text in ["hi", "hello", "hey", "สวัสดี"]:
-        reply = "สวัสดีครับ / Hello!\nWelcome to Pandan Milk\n\nType 'menu' or 'เมนู' to see the sample menu."
-    elif text in ["menu", "เมนู"]:
+    if text in ["hi", "hello", "hey"]:
+        reply = "Hello!\nWelcome to Pandan Milk\n\nType 'menu' to see the sample menu."
+    elif text == "menu":
         reply = (
-            "Sample Menu\n"
-            "เมนูตัวอย่าง\n\n"
+            "Sample Menu\n\n"
             "1. Pandan Milk - 55 THB\n"
-            "   นมใบเตย\n\n"
             "2. Iced Pandan Milk - 65 THB\n"
-            "   นมใบเตยเย็น\n\n"
-            "3. Kanom Krok - 45 THB\n"
-            "   ขนมครก\n\n"
-            "Type 1, 2, or 3 to select\n"
-            "พิมพ์ 1, 2 หรือ 3 เพื่อเลือก"
+            "3. Kanom Krok - 45 THB\n\n"
+            "Type 1, 2, or 3 to select"
         )
     elif text in ["1", "2", "3"]:
         items = {
@@ -63,11 +58,11 @@ def handle_message(event):
             "2": "Iced Pandan Milk - 65 THB",
             "3": "Kanom Krok - 45 THB",
         }
-        reply = f"You selected:\n{items[text]}\n\nThank you!\nขอบคุณครับ\n\nType 'menu' to see the menu again."
+        reply = f"You selected:\n{items[text]}\n\nThank you!\n\nType 'menu' to see the menu again."
     elif text == "help":
-        reply = "Type 'menu' or 'เมนู' to see the sample menu."
+        reply = "Type 'menu' to see the sample menu."
     else:
-        reply = "Type 'menu' or 'เมนู' to see the sample menu."
+        reply = "Type 'menu' to see the sample menu."
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)

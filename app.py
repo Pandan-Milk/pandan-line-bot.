@@ -42,14 +42,55 @@ def webhook():
 def handle_message(event):
     text = event.message.text.strip().lower()
 
-    if text in ["hi", "hello", "hey", "สวัสดี"]:
-        reply = "Hello! I'm your LINE bot. Try typing 'menu'."
-    elif text == "menu":
-        reply = "Menu:\n1. Echo\n2. Type 'help'"
-    elif text == "help":
-        reply = "Commands: menu, help, or any message"
+    if text in ["hi", "hello", "hey", "สวัสดี", "start"]:
+        reply = (
+            "สวัสดีครับ / Hello!\n"
+            "Welcome to Pandan Milk\n"
+            "From California with Love\n\n"
+            "พิมพ์ 'menu' หรือ 'เมนู' เพื่อดูเมนู\n"
+            "Type 'menu' to see the menu"
+        )
+    elif text in ["menu", "เมนู", "เมนูอาหาร"]:
+        reply = (
+            "Pandan Milk Menu\n"
+            "เมนู Pandan Milk\n\n"
+            "1. Pandan Milk (Classic) - 55 THB\n"
+            "   นมใบเตย คลาสสิก\n\n"
+            "2. Pandan Milk (Less Sugar) - 55 THB\n"
+            "   นมใบเตย หวานน้อย\n\n"
+            "3. Iced Pandan Milk - 65 THB\n"
+            "   นมใบเตย เย็น\n\n"
+            "4. Kanom Krok (6 pcs) - 45 THB\n"
+            "   ขนมครกใบเตย 6 ชิ้น\n\n"
+            "Type the number (1-4) to order\n"
+            "พิมพ์ตัวเลข (1-4) เพื่อสั่ง"
+        )
+    elif text in ["1", "2", "3", "4"]:
+        items = {
+            "1": "Pandan Milk (Classic) - 55 THB",
+            "2": "Pandan Milk (Less Sugar) - 55 THB",
+            "3": "Iced Pandan Milk - 65 THB",
+            "4": "Kanom Krok (6 pcs) - 45 THB",
+        }
+        reply = (
+            f"You selected:\n{items[text]}\n\n"
+            "Please confirm your order at the kiosk.\n"
+            "กรุณายืนยันออเดอร์ที่ร้าน\n\n"
+            "Type 'menu' to see the menu again."
+        )
+    elif text in ["help", "ช่วย", "ช่วยเหลือ"]:
+        reply = (
+            "Commands / คำสั่ง:\n"
+            "- menu / เมนู\n"
+            "- 1, 2, 3, 4 to order\n"
+            "- help"
+        )
     else:
-        reply = f"You said: {event.message.text}"
+        reply = (
+            "Sorry, I didn't understand.\n"
+            "ขออภัย ไม่เข้าใจ\n\n"
+            "Type 'menu' or 'เมนู' to see the menu."
+        )
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)

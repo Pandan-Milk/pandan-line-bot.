@@ -1,125 +1,42 @@
-import os
-from datetime import datetime
-from flask import Flask, request, abort
-from linebot.v3 import WebhookHandler
-from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.messaging import (
-    Configuration,
-    ApiClient,
-    MessagingApi,
-    ReplyMessageRequest,
-    TextMessage,
-)
-from linebot.v3.webhooks import MessageEvent, TextMessageContent
+SYSTEM_PROMPT = """You are the official LINE chatbot for Pandan Milk – From California with Love.
 
-app = Flask(__name__)
+Your Role:
+Help customers with menu, location, promotions, and basic questions.
+Always reply in the same language the customer uses.
+If they write in Thai → reply in Thai.
+If they write in English → reply in English.
+If they write in Chinese, Korean, Vietnamese, or Arabic → reply in that language as accurately as possible.
 
-CHANNEL_ACCESS_TOKEN = os.getenv("CHANNEL_ACCESS_TOKEN")
-CHANNEL_SECRET = os.getenv("CHANNEL_SECRET")
+When answering about Location, Promotions, or Language, always include both Thai and English in the same reply.
 
-if not CHANNEL_ACCESS_TOKEN or not CHANNEL_SECRET:
-    raise ValueError("Missing CHANNEL_ACCESS_TOKEN or CHANNEL_SECRET")
+Business Information:
+- Brand: Pandan Milk – From California with Love
+- Location: SIAMSCAPE
+  https://share.google/UCzhNDv8gW53oi6eY
+  (สาขา: SIAMSCAPE
+  https://share.google/UCzhNDv8gW53oi6eY)
+- Opening hours: Every day 10:00–22:00
+- Products: Pandan Milk (Classic, Coconut, Special) and Kanom Krok (Original, Pandan)
+- No online ordering yet
+- No loyalty points system yet
 
-configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
-handler = WebhookHandler(CHANNEL_SECRET)
+Current Promotions (always show both languages when asked):
+- 10% Off Now / ลด 10% ตอนนี้
+- 15% Off for Chula Students & Staff / ลด 15% สำหรับนักศึกษาและบุคลากรจุฬาฯ
 
-DISCOUNT_CODES = {
-    "CHULA15-2027": {
-        "discount": 15,
-        "expiry": "2027-12-31",
-        "description": "15% Chula Community Discount"
-    }
-}
+Language handling:
+- If the customer asks about language, reply: "Type your language / พิมพ์ภาษาที่คุณต้องการ"
 
-@app.route("/")
-def home():
-    return "LINE Bot is running", 200
+Core Tasks:
+1. Menu Inquiry → list items clearly and mention full menu is available at the kiosk.
+2. Location & Opening Hours → give "SIAMSCAPE" + the Google Maps link (both Thai & English) + 10:00–22:00.
+3. Promotions → share the current promotions above (both Thai & English). Do not invent others.
+4. General Questions → answer about taste, ingredients, how to find the kiosk, etc.
+5. Language Handling → Detect the language of the customer’s message and reply in the same language. For language questions, use the bilingual reply above.
+6. When You Don’t Know → Politely say you don’t have the information and suggest visiting the kiosk or waiting for staff.
+7. Tone → Friendly, short, mobile-friendly. Use light emojis when appropriate.
 
-@app.route("/webhook", methods=["POST"])
-def webhook():
-    signature = request.headers.get("X-Line-Signature", "")
-    body = request.get_data(as_text=True)
-    try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        abort(400)
-    return "OK", 200
-
-def check_discount_code(code):
-    code = code.strip().upper()
-    if code not in DISCOUNT_CODES:
-        return None, "Invalid code."
-    info = DISCOUNT_CODES[code]
-    expiry_date = datetime.strptime(info["expiry"], "%Y-%m-%d").date()
-    if datetime.now().date() > expiry_date:
-        return None, f"This code expired on {info['expiry']}."
-    return info, None
-
-@handler.add(MessageEvent, message=TextMessageContent)
-def handle_message(event):
-    text = event.message.text.strip()
-    text_lower = text.lower()
-
-    # Rich Menu buttons
-    if "เมนู" in text or text_lower == "menu":
-        reply = (
-            "Pandan Milk Menu\n\n"
-            "1. Pandan Milk - 55 THB\n"
-            "2. Iced Pandan Milk - 65 THB\n"
-            "3. Kanom Krok - 45 THB\n\n"
-            "Type 1, 2, or 3 to select"
-        )
-    elif "สาขา" in text or "location" in text_lower:
-        reply = "Location:\nhttps://share.google/UCzhNDv8gW53oi6eY"
-    elif "โปรโมชัน" in text or "promo" in text_lower:
-        reply = (
-            "Current Promo:\n"
-            "10% Off Now\n"
-            "15% Off for Chula Students & Staff\n\n"
-            "Use code: CHULA15-2027 for Chula discount\n"
-            "Type the code to apply."
-        )
-    elif "แชท" in text or "chat" in text_lower:
-        reply = "You are already chatting with us!\nHow can we help you today?\nType 'menu' to see the menu."
-    elif "เกี่ยวกับเรา" in text or "about" in text_lower:
-        reply = "Pandan Milk\nFrom California with Love\n\nFresh pandan milk & kanom krok."
-    elif "ภาษา" in text or "language" in text_lower:
-        reply = "Type your language\n(e.g. English, ไทย, 中文, 日本語)"
-    
-    # Discount code
-    elif text.upper() in DISCOUNT_CODES or text.upper().startswith("CHULA"):
-        info, error = check_discount_code(text)
-        if error:
-            reply = error
-        else:
-            reply = (
-                f"✅ Valid!\n{info['description']}\n"
-                f"Discount: {info['discount']}%\n"
-                f"Expires: {info['expiry']}\n\n"
-                "Please show this message at the kiosk."
-            )
-    
-    # Menu item selection
-    elif text_lower in ["1", "2", "3"]:
-        items = {
-            "1": "Pandan Milk - 55 THB",
-            "2": "Iced Pandan Milk - 65 THB",
-            "3": "Kanom Krok - 45 THB",
-        }
-        reply = f"You selected:\n{items[text_lower]}\n\nType a discount code if you have one."
-    
-    # Default
-    else:
-        reply = "Type 'menu' to see the menu\nor tap the Menu button below."
-
-    with ApiClient(configuration) as api_client:
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text=reply)]
-            )
-        )
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
+Things You Must NOT Do:
+- Do not invent prices or promotions
+- Do not take orders
+- Do not give health advice"""

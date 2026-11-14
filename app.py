@@ -70,12 +70,18 @@ def handle_message(event):
             "Type 1, 2, or 3 to select"
         )
     elif "สาขา" in text or "location" in text_lower:
-        reply = "Location:\nSiam Escape / your kiosk address here\n\nType 'menu' to see the menu."
+        reply = (
+            "Location:\n"
+            "215 Phaya Thai Rd, 2nd Fl\n"
+            "Pathum Wan, Bangkok 10330\n\n"
+            "Type 'menu' to see the menu."
+        )
     elif "โปรโมชัน" in text or "promo" in text_lower:
         reply = (
             "Current Promo:\n"
-            "15% off for Chula students & staff\n"
-            "Use code: CHULA15-2027\n\n"
+            "10% Off Now\n"
+            "15% Off for Chula Students & Staff\n\n"
+            "Use code: CHULA15-2027 for Chula discount\n"
             "Type the code to apply."
         )
     elif "แชท" in text or "chat" in text_lower:
@@ -83,7 +89,7 @@ def handle_message(event):
     elif "เกี่ยวกับเรา" in text or "about" in text_lower:
         reply = "Pandan Milk\nFrom California with Love\n\nFresh pandan milk & kanom krok."
     elif "ภาษา" in text or "language" in text_lower:
-        reply = "Language: English / ไทย\n\nType 'menu' or 'เมนู' anytime."
+        reply = "Type your language\n(e.g. English, ไทย, 中文, 日本語)"
     
     # Discount code
     elif text.upper() in DISCOUNT_CODES or text.upper().startswith("CHULA"):
@@ -92,33 +98,4 @@ def handle_message(event):
             reply = error
         else:
             reply = (
-                f"✅ Valid!\n{info['description']}\n"
-                f"Discount: {info['discount']}%\n"
-                f"Expires: {info['expiry']}\n\n"
-                "Please show this message at the kiosk."
-            )
-    
-    # Menu item selection
-    elif text_lower in ["1", "2", "3"]:
-        items = {
-            "1": "Pandan Milk - 55 THB",
-            "2": "Iced Pandan Milk - 65 THB",
-            "3": "Kanom Krok - 45 THB",
-        }
-        reply = f"You selected:\n{items[text_lower]}\n\nType a discount code if you have one."
-    
-    # Default
-    else:
-        reply = "Type 'menu' to see the menu\nor tap the Menu button below."
-
-    with ApiClient(configuration) as api_client:
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text=reply)]
-            )
-        )
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
+                f"✅ 

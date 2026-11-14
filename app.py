@@ -16,7 +16,7 @@ app = Flask(__name__)
 
 CHANNEL_ACCESS_TOKEN = os.getenv("CHANNEL_ACCESS_TOKEN")
 CHANNEL_SECRET = os.getenv("CHANNEL_SECRET")
-XAI_API_KEY = os.getenv("XAI_API_KEY")  # Add this in Railway Variables
+XAI_API_KEY = os.getenv("XAI_API_KEY")
 
 if not CHANNEL_ACCESS_TOKEN or not CHANNEL_SECRET:
     raise ValueError("Missing CHANNEL_ACCESS_TOKEN or CHANNEL_SECRET")
@@ -93,7 +93,7 @@ def get_ai_reply(user_message):
         )
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"].strip()
-    except Exception as e:
+    except Exception:
         return "Sorry, I couldn't process that right now. Please try again."
 
 @handler.add(MessageEvent, message=TextMessageContent)

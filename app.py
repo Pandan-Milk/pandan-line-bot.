@@ -98,4 +98,33 @@ def handle_message(event):
             reply = error
         else:
             reply = (
-                f"✅ 
+                f"✅ Valid!\n{info['description']}\n"
+                f"Discount: {info['discount']}%\n"
+                f"Expires: {info['expiry']}\n\n"
+                "Please show this message at the kiosk."
+            )
+    
+    # Menu item selection
+    elif text_lower in ["1", "2", "3"]:
+        items = {
+            "1": "Pandan Milk - 55 THB",
+            "2": "Iced Pandan Milk - 65 THB",
+            "3": "Kanom Krok - 45 THB",
+        }
+        reply = f"You selected:\n{items[text_lower]}\n\nType a discount code if you have one."
+    
+    # Default
+    else:
+        reply = "Type 'menu' to see the menu\nor tap the Menu button below."
+
+    with ApiClient(configuration) as api_client:
+        line_bot_api = MessagingApi(api_client)
+        line_bot_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text=reply)]
+            )
+        )
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))

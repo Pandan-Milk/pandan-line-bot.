@@ -23,7 +23,6 @@ if not CHANNEL_ACCESS_TOKEN or not CHANNEL_SECRET:
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
-# Discount codes and their expiry dates
 DISCOUNT_CODES = {
     "CHULA15-2027": {
         "discount": 15,
@@ -40,26 +39,20 @@ def home():
 def webhook():
     signature = request.headers.get("X-Line-Signature", "")
     body = request.get_data(as_text=True)
-
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
-
     return "OK", 200
 
 def check_discount_code(code):
     code = code.strip().upper()
     if code not in DISCOUNT_CODES:
         return None, "Invalid code."
-    
     info = DISCOUNT_CODES[code]
     expiry_date = datetime.strptime(info["expiry"], "%Y-%m-%d").date()
-    today = datetime.now().date()
-    
-    if today > expiry_date:
+    if datetime.now().date() > expiry_date:
         return None, f"This code expired on {info['expiry']}."
-    
     return info, None
 
 @handler.add(MessageEvent, message=TextMessageContent)
@@ -67,39 +60,56 @@ def handle_message(event):
     text = event.message.text.strip()
     text_lower = text.lower()
 
-    if text_lower in ["hi", "hello", "hey"]:
-        reply = "Hello!\nWelcome to Pandan Milk\n\nType 'menu' to see the sample menu.\nType a discount code (e.g. CHULA15-2027) to apply discount."
-    elif text_lower == "menu":
+    # Rich Menu buttons
+    if "เมนู" in text or text_lower == "menu":
         reply = (
-            "Sample Menu\n\n"
+            "Pandan Milk Menu\n\n"
             "1. Pandan Milk - 55 THB\n"
             "2. Iced Pandan Milk - 65 THB\n"
             "3. Kanom Krok - 45 THB\n\n"
-            "Type 1, 2, or 3 to select\n"
-            "Or type a discount code to apply 15% off"
+            "Type 1, 2, or 3 to select"
         )
-    elif text_lower in ["1", "2", "3"]:
-        items = {
-            "1": ("Pandan Milk", 55),
-            "2": ("Iced Pandan Milk", 65),
-            "3": ("Kanom Krok", 45),
-        }
-        name, price = items[text_lower]
-        reply = f"You selected:\n{name} - {price} THB\n\nType a discount code to apply discount, or type 'menu' again."
-    else:
-        # Check if it's a discount code
+    elif "สาขา" in text or "location" in text_lower:
+        reply = "Location:\nSiam Escape / your kiosk address here\n\nType 'menu' to see the menu."
+    elif "โปรโมชัน" in text or "promo" in text_lower:
+        reply = (
+            "Current Promo:\n"
+            "15% off for Chula students & staff\n"
+            "Use code: CHULA15-2027\n\n"
+            "Type the code to apply."
+        )
+    elif "แชท" in text or "chat" in text_lower:
+        reply = "You are already chatting with us!\nHow can we help you today?\nType 'menu' to see the menu."
+    elif "เกี่ยวกับเรา" in text or "about" in text_lower:
+        reply = "Pandan Milk\nFrom California with Love\n\nFresh pandan milk & kanom krok."
+    elif "ภาษา" in text or "language" in text_lower:
+        reply = "Language: English / ไทย\n\nType 'menu' or 'เมนู' anytime."
+    
+    # Discount code
+    elif text.upper() in DISCOUNT_CODES or text.upper().startswith("CHULA"):
         info, error = check_discount_code(text)
         if error:
-            reply = f"{error}\n\nType 'menu' to see the sample menu."
+            reply = error
         else:
             reply = (
-                f"✅ Valid!\n"
-                f"{info['description']}\n"
+                f"✅ Valid!\n{info['description']}\n"
                 f"Discount: {info['discount']}%\n"
                 f"Expires: {info['expiry']}\n\n"
-                f"Please show this message at the kiosk.\n"
-                f"Type 'menu' to continue."
+                "Please show this message at the kiosk."
             )
+    
+    # Menu item selection
+    elif text_lower in ["1", "2", "3"]:
+        items = {
+            "1": "Pandan Milk - 55 THB",
+            "2": "Iced Pandan Milk - 65 THB",
+            "3": "Kanom Krok - 45 THB",
+        }
+        reply = f"You selected:\n{items[text_lower]}\n\nType a discount code if you have one."
+    
+    # Default
+    else:
+        reply = "Type 'menu' to see the menu\nor tap the Menu button below."
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)

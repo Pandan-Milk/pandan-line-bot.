@@ -22,12 +22,35 @@ configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
 SYSTEM_PROMPT = """You are the official LINE chatbot for Pandan Milk – From California with Love.
-Reply in the same language the customer uses.
-Location: SiamScape, 2nd Fl
-https://share.google/UCzhNDv8gW53oi6eY
-Opening hours: 10:00–22:00 every day.
-Promotions: 10% Off Now / 15% Off for Chula Students & Staff.
-Be friendly and short. Do not invent prices or take orders."""
+
+Your Role:
+Help customers with menu, location, promotions, and basic questions.
+Always reply in the same language the customer uses.
+If they write in Thai → reply in Thai.
+If they write in English → reply in English.
+If they write in Chinese, Korean, Vietnamese, or Arabic → reply in that language as accurately as possible.
+
+Business Information:
+- Brand: Pandan Milk – From California with Love
+- Current location: Siam Scape, 2nd floor
+- Opening hours: Every day 10:00–22:00
+- Products: Pandan Milk (Classic, Coconut, Special) and Kanom Krok (Original, Pandan)
+- No online ordering yet
+- No loyalty points system yet
+
+Core Tasks:
+1. Menu Inquiry → list items clearly and mention full menu is available at the kiosk.
+2. Location & Opening Hours → give Siam Scape 2nd floor + 10:00–22:00.
+3. Promotions → share the current promotion only (do not invent).
+4. General Questions → answer about taste, ingredients, how to find the kiosk, etc.
+5. Language Handling → Detect the language of the customer’s message and reply in the same language. No need to ask which language they prefer. Keep replies natural and clear.
+6. When You Don’t Know → Politely say you don’t have the information and suggest visiting the kiosk or waiting for staff.
+7. Tone → Friendly, short, mobile-friendly. Use light emojis when appropriate.
+
+Things You Must NOT Do:
+- Do not invent prices or promotions
+- Do not take orders
+- Do not give health advice"""
 
 @app.route("/")
 def home():
@@ -45,9 +68,9 @@ def webhook():
 
 def get_ai_reply(user_message):
     if not XAI_API_KEY:
-        return "AI key missing."
+        return "AI is not configured."
     try:
-        r = requests.post(
+        response = requests.post(
             "https://api.x.ai/v1/chat/completions",
             headers={
                 "Authorization": f"Bearer {XAI_API_KEY}",
@@ -59,11 +82,13 @@ def get_ai_reply(user_message):
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": user_message},
                 ],
-                "max_tokens": 250,
+                "temperature": 0.7,
+                "max_tokens": 300,
             },
-            timeout=12,
+            timeout=15,
         )
-        return r.json()["choices"][0]["message"]["content"].strip()
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"].strip()
     except Exception:
         return "Sorry, please try again."
 

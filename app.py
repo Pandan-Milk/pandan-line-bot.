@@ -70,12 +70,7 @@ def handle_message(event):
             "Type 1, 2, or 3 to select"
         )
     elif "สาขา" in text or "location" in text_lower:
-        reply = (
-            "Location:\n"
-            "215 Phaya Thai Rd, 2nd Fl\n"
-            "Pathum Wan, Bangkok 10330\n\n"
-            "Type 'menu' to see the menu."
-        )
+        reply = "Location:\nhttps://share.google/UCzhNDv8gW53oi6eY"
     elif "โปรโมชัน" in text or "promo" in text_lower:
         reply = (
             "Current Promo:\n"
